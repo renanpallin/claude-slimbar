@@ -6,6 +6,10 @@ import type { Register } from 'claude-code'
 const MODE_LABEL_COLUMNS = 27
 // Keeps the row from wrapping at the footer's edges.
 const EDGE_COLUMNS = 6
+// In the classic renderer, the engine's notices at the footer's right, such as
+// "◐ medium · /effort" at startup, share this row and would drop to a second
+// one. In fullscreen they float above the prompt, so the bar can use the room.
+const NOTICE_COLUMNS = 20
 const MIN_BAR_COLUMNS = 10
 const FALLBACK_COLUMNS = 80
 const SEPARATOR = ' · '
@@ -13,6 +17,7 @@ const SEPARATOR = ' · '
 // character), this makes the bar and stats give way, so the engine's label
 // doesn't wrap. Flex shrinking is shared in proportion to this number.
 const YIELD_TO_LABEL = 1000
+const REMINDERS = ['? for shortcuts', '← for agents']
 
 // No model publishes where quality drops, so these are reference points:
 // 150k is the Claude API's default compaction trigger, and the rest apply the
@@ -47,7 +52,7 @@ const noticesIn = (hint: string) =>
   hint
     .split(SEPARATOR)
     .map(part => part.replace(/\([^)]* to cycle\)/, '').trim())
-    .filter(part => part !== '' && part !== '? for shortcuts')
+    .filter(part => part !== '' && !REMINDERS.includes(part))
     .map(part => part.replace(/^(←\s*\d+) agents?$/, '$1'))
 
 // Keeps the notices that fit, in the hint's order.
@@ -77,7 +82,10 @@ export const register: Register = on => {
     const stats = ` ${percent}%${SEPARATOR}${formatTokens(tokens)}/${formatTokens(context.window)}`
 
     const columns = e.viewport?.columns ?? FALLBACK_COLUMNS
-    const room = Math.max(columns - MODE_LABEL_COLUMNS - EDGE_COLUMNS, 0)
+    const full = Math.max(columns - MODE_LABEL_COLUMNS - EDGE_COLUMNS, 0)
+    // A brief second row beats a bar that's gone for good on a narrow row.
+    const hasSpare = full - stats.length - MIN_BAR_COLUMNS >= NOTICE_COLUMNS
+    const room = !e.viewport?.isFullscreen && hasSpare ? full - NOTICE_COLUMNS : full
     const notices = fitting(
       noticesIn(e.props.hint),
       room - stats.length - MIN_BAR_COLUMNS,

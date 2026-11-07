@@ -14,13 +14,19 @@ const answerUsage = (on: On, current: () => Usage) =>
     value: { startedAt: 0, context: current(), rateLimits: [] },
   }))
 
-const draw = async ($: Engine, surface: Surface, columns: number, hint = HINT) => {
+const draw = async (
+  $: Engine,
+  surface: Surface,
+  columns: number,
+  hint = HINT,
+  isFullscreen = true,
+) => {
   const mounted = await $.ui.mount({
     plugin: 'slimbar',
     surface,
     component: 'PromptHint',
     props: { isDraft: false, isWorking: false, hint },
-    viewport: { columns, rows: 40, isFullscreen: true },
+    viewport: { columns, rows: 40, isFullscreen },
   })
   const fill = await mounted.find({ type: 'Text', text: /^━+$/ })
   const track = await mounted.find({ type: 'Text', text: /^─+$/ })
@@ -61,6 +67,32 @@ for (const surface of ['terminal', 'desktop'] as const) {
     const { suffix } = await draw($, surface, 100)
 
     expect(suffix).toBe(' 23% · 230k/1M · ← 2')
+  })
+
+  test(`${surface}: drops the agents reminder while no agent runs`, async ($, on) => {
+    answerUsage(on, () => ({ tokens: 230_000, window: 1_000_000, percent: 23 }))
+
+    const { suffix } = await draw($, surface, 100, '(shift+tab to cycle) · ← for agents')
+
+    expect(suffix).toBe(' 23% · 230k/1M')
+  })
+
+  test(`${surface}: leaves room for the engine's notices in the classic renderer`, async ($, on) => {
+    answerUsage(on, () => ({ tokens: 230_000, window: 1_000_000, percent: 23 }))
+
+    const { fill, track, suffix } = await draw($, surface, 120, HINT, false)
+
+    expect(fill.length + track.length + suffix.length).toBe(120 - 27 - 6 - 20)
+  })
+
+  test(`${surface}: keeps the bar on a narrow row in the classic renderer`, async ($, on) => {
+    answerUsage(on, () => ({ tokens: 230_000, window: 1_000_000, percent: 23 }))
+
+    const { fill, track, suffix } = await draw($, surface, 60, HINT, false)
+
+    expect(suffix).toBe(' 23% · 230k/1M')
+    expect(fill.length + track.length).toBe(60 - 27 - 6 - suffix.length)
+    expect(fill.length + track.length).toBeGreaterThanOrEqual(10)
   })
 
   test(`${surface}: fills the bar in proportion, inside the row`, async ($, on) => {
