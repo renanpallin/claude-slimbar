@@ -1,12 +1,14 @@
 {
   "name": "claude-slimbar",
-  "description": "Slimbar: a one-row footer with a context bar for Claude Code",
+  "description": "Slimbar: a minimal, one-row footer with a context bar for Claude Code",
   "owner": { "name": "Renan Pallin" },
   "plugins": [
     {
       "name": "slimbar",
       "source": "./",
-      "description": "One-row footer for Claude Code: a thin context bar colored by tokens in use, with the footer's notices beside it"
+      "description": "Minimal footer for Claude Code: one row, one context bar colored by tokens in use, no status line needed",
+      "category": "interface",
+      "tags": ["minimal", "footer", "context", "context-window", "tokens", "status-line", "mod"]
     }
   ]
 }
