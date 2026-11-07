@@ -1,0 +1,9 @@
+{
+  "name": "slimbar",
+  "version": "0.1.0",
+  "description": "One-row footer for Claude Code: a thin context bar colored by tokens in use, with the footer's notices beside it",
+  "author": { "name": "Renan Pallin" },
+  "homepage": "https://github.com/renanpallin/claude-slimbar",
+  "repository": "https://github.com/renanpallin/claude-slimbar",
+  "license": "MIT"
+}
